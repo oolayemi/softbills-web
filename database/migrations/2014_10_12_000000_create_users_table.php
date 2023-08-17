@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->string('gender');
             $table->string('phone');
+            $table->string('transaction_pin')->nullable();
             $table->string('password');
             $table->string('image_url')->nullable();
 
