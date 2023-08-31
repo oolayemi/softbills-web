@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\Enums\ApiResponseEnum;
-use App\Enums\WalletSourceEnum;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Rules\Phone;
@@ -62,7 +60,7 @@ class RegisterController extends Controller
             $wallet->virtualAccount()->create([
                 'user_id' => $user->id,
                 'account_name' => fake()->name,
-                'account_number' => fake()->randomNumber(10),
+                'account_number' => rand(1000000000, 9999999999),
                 'bank_name' => 'Access Bank',
                 'account_reference' => \Str::random(17),
             ]);
