@@ -11,7 +11,7 @@ class ApiResponse
 {
     use BaseServiceTrait;
 
-    public static function success(string $message = null, array $data = [], int $code = 200): JsonResponse
+    public static function success(string $message = null, ?array $data = [], int $code = 200): JsonResponse
     {
         return response()->json([
             'success' => true,

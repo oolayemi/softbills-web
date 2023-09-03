@@ -40,6 +40,9 @@ Route::prefix('v1')->group(function () {
                 Route::get('', [NokInformationController::class, 'index']);
                 Route::post('add', [NokInformationController::class, 'store']);
             });
+
+            Route::post('transaction-pin/change', [UserController::class, 'changePin']);
+            Route::post('password/change', [UserController::class, 'changePassword']);
         });
     });
 });

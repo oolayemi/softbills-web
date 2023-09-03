@@ -61,4 +61,9 @@ class User extends Authenticatable
     {
         return $this->hasOne(Wallet::class);
     }
+
+    public function nok(): HasOne
+    {
+        return $this->hasOne(NokInformation::class);
+    }
 }

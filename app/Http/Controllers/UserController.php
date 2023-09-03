@@ -6,6 +6,7 @@ use App\Rules\Phone;
 use App\Services\Helpers\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 
 class UserController extends Controller
@@ -21,8 +22,7 @@ class UserController extends Controller
         $validated = $request->validate([
             'firstname' => ['required', 'string', 'min:3', 'max:20'],
             'lastname' => ['required', 'string', 'min:3', 'max:20'],
-            'phone_number' => ['required', new Phone],
-            'address' => ['required', 'string'],
+            'phone' => ['required', new Phone],
             'image' => ['nullable', 'image', 'max:10000'],
         ]);
 
@@ -62,6 +62,43 @@ class UserController extends Controller
             ->toArray();
 
         return ApiResponse::success('Wallet transactions fetched successfully', $walletTransactions);
+    }
+
+    public function changePassword(Request $request) {
+        $validated = $request->validate([
+            'current_password' => 'required|string',
+            'new_password' => ['required',
+                'min:8',
+                'regex:/^.*(?=.{3,})(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[\d\x]).*$/',
+                'confirmed'],
+        ], $messages = [
+            'regex' => 'The :attribute must contain at least an uppercase, lowercase and a number',
+        ]);
+
+        $user = $request->user();
+
+        if (!Hash::check($validated['current_password'], $user->password)) {
+            return ApiResponse::failed("The provided password is incorrect");
+        }
+        $user->update(['password' => Hash::make($validated['new_password'])]);
+
+        return ApiResponse::success( "Password updated successfully");
+    }
+
+    public function changePin(Request $request) {
+        $validated = $request->validate([
+            'current_pin' => 'required|string',
+            'new_pin' => 'required|string|confirmed|digits:4',
+        ]);
+
+        $user = $request->user();
+
+        if (sha1($validated['current_pin']) != $user->transaction_pin) {
+            return ApiResponse::failed("The provided old transaction PIN is incorrect");
+        }
+        $user->update(['transaction_pin' => sha1($validated['new_pin'])]);
+
+        return ApiResponse::success( "Transaction PIN updated successfully");
     }
 
 //    public function tier2Upgrade(Request $request, SageCloudServices $sageCloud): JsonResponse

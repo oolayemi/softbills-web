@@ -30,7 +30,7 @@ class NokInformationController extends Controller
     public function index(): JsonResponse
     {
         $user = \request()->user();
-        $nok = $user->nok->toArray();
+        $nok = $user->nok?->toArray();
 
         return ApiResponse::success('Next of Kin information fetched successfully', $nok);
     }

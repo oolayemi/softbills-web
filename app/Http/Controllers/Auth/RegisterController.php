@@ -23,7 +23,7 @@ class RegisterController extends Controller
             'gender' => ['required', 'string', Rule::in(['Male', 'Female'])],
             'phone' => ['required', 'unique:users,phone', new Phone],
             'device_id' => 'required|string',
-            'transaction_pin' => 'required|string:digits:4',
+            'transaction_pin' => 'required|string|digits:4',
 
             'password' => 'required|min:8|max:20',
         ];
