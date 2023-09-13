@@ -31,4 +31,10 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'vtpass' => [
+        'base_url' => env('VTPASS_BASEURL'),
+        'username' => env('VTPASS_USERNAME'),
+        'password' => env('VTPASS_PASSWORD'),
+    ]
+
 ];
