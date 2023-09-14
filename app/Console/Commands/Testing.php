@@ -28,8 +28,8 @@ class Testing extends Command
     {
         $vtPass = resolve(VtPassApis::class);
         $response = $vtPass->validateSmartCard([
-            'billersCode' => 1212121212,
-            'serviceID' => 'dstv'
+            'billersCode' => 7032726137,
+            'serviceID' => 'gotv'
         ]);
         dd($response);
     }
