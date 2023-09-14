@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\NokInformationController;
 use App\Http\Controllers\Services\CableTvController;
+use App\Http\Controllers\Services\ElectricityController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -51,6 +52,12 @@ Route::prefix('v1')->group(function () {
             Route::get('{type}/provider', [CableTvController::class, 'fetchPackages']);
             Route::post('validate', [CableTvController::class, 'validateSmartCard']);
             Route::post('purchase', [CableTvController::class, 'purchase']);
+        });
+
+        Route::prefix('electricity')->group(function () {
+            Route::get('providers', [ElectricityController::class, 'providers']);
+            Route::post('validate', [ElectricityController::class, 'validateMeterNumber']);
+            Route::post('purchase', [ElectricityController::class, 'purchase']);
         });
     });
 });
