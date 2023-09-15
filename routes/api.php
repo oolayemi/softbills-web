@@ -59,5 +59,9 @@ Route::prefix('v1')->group(function () {
             Route::post('validate', [ElectricityController::class, 'validateMeterNumber']);
             Route::post('purchase', [ElectricityController::class, 'purchase']);
         });
+
+        Route::prefix('airtime')->group(function () {
+            Route::post('buy', [AirtimeController::class, 'buyAirtime']);
+        });
     });
 });
