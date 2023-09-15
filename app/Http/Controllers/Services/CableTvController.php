@@ -37,12 +37,17 @@ class CableTvController extends Controller
 
     public function validateSmartCard(Request $request, VtPassApis $vtPass): JsonResponse
     {
-        $validated = $request->validate([
-            'billersCode' => 'required|string',
-            'serviceID' => 'required|string',
+        $request->validate([
+            'billers_code' => 'required|string',
+            'service_id' => 'required|string',
         ]);
 
-        $response = $vtPass->validateSmartCard($validated);
+        $data = [
+            'billersCode' => $request->billers_code,
+            'serviceID' => $request->service_id
+        ];
+
+        $response = $vtPass->validateSmartCard($data);
 
         if (empty($response) || !isset($response['content']) || (isset($response['code']) && $response['code'] != "000")) {
             return ApiResponse::failed('An error occurred with fetching validating card details');
@@ -53,6 +58,15 @@ class CableTvController extends Controller
 
     public function purchase(Request $request, VtPassApis $vtPass)
     {
+        $data = $request->validate([
+            'service_id' => 'required',
+            'billers_code' => 'required',
+            'variation_code' => 'required',
+            'amount' => 'required',
+            'phone' => 'required',
+            'subscription_type' => 'required',
+        ]);
+
         $user = $request->user();
     }
 }
