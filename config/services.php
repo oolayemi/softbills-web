@@ -35,6 +35,12 @@ return [
         'base_url' => env('VTPASS_BASEURL'),
         'username' => env('VTPASS_USERNAME'),
         'password' => env('VTPASS_PASSWORD'),
+    ],
+
+    'megasub' => [
+        'base_url' => env('MEGA_SUB_BASEURL'),
+        'token' => env('MEGA_SUB_TOKEN'),
+        'password' => env('MEGA_SUB_PASSWORD'),
     ]
 
 ];
