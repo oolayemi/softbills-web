@@ -19,7 +19,9 @@ class CableTvController extends Controller
             return ApiResponse::failed("An error occurred, please try again");
         }
 
-        return ApiResponse::success("Provider packages retrieved successfully", ['billers' => $response['content']]);
+        \Log::info("CableTV providers", $response['content']);
+
+        return ApiResponse::success("Provider packages retrieved successfully", $response['content']);
     }
 
     public function fetchPackages($type, VtPassApis $vtPass): JsonResponse
@@ -30,9 +32,7 @@ class CableTvController extends Controller
             return ApiResponse::failed('An error occurred with fetching provider packages');
         }
 
-        return ApiResponse::success(
-            $type.' packages retrieved successfully',
-            ['billers' => $response['content']]);
+        return ApiResponse::success($type.' packages retrieved successfully', $response['content']['varations']);
     }
 
     public function validateSmartCard(Request $request, VtPassApis $vtPass): JsonResponse
@@ -50,6 +50,7 @@ class CableTvController extends Controller
         $response = $vtPass->validateSmartCard($data);
 
         if (empty($response) || !isset($response['content']) || (isset($response['code']) && $response['code'] != "000")) {
+            \Log::info("whats wrong", $data);
             return ApiResponse::failed('An error occurred with fetching validating card details');
         }
 
@@ -64,9 +65,21 @@ class CableTvController extends Controller
             'variation_code' => 'required',
             'amount' => 'required',
             'phone' => 'required',
-            'subscription_type' => 'required',
         ]);
 
+        $requestId = now()->format('YmdHi') . \Str::random(10);
         $user = $request->user();
+
+        $data = [
+            'request_id' => $requestId,
+            'serviceID' => $request->service_id,
+            'billersCode' => $request->billers_code,
+            'amount' => $request->amount,
+            'phone' => $user->phone,
+            'subscription_type' => 'change'
+        ];
+
+//        $vtPass->
+
     }
 }

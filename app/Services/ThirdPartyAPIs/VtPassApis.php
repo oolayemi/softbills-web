@@ -15,7 +15,7 @@ class VtPassApis
     private string $electricityProviders = '/services?identifier=electricity-bill';
     private string $serviceVariations = '/service-variations?serviceID=';
     private string $merchantVerify = '/merchant-verify';
-    private string $Payment = '/pay';
+    private string $payment = '/pay';
 
     public function __construct()
     {
@@ -52,6 +52,12 @@ class VtPassApis
     public function validateSmartCard(array $params): array
     {
         $url = sprintf('%s%s', $this->baseUrl, $this->merchantVerify);
+        return $this->post($url, $params);
+    }
+
+    public function purchaseCableTv(array $params): array
+    {
+        $url = sprintf('%s%s', $this->baseUrl, $this->payment);
         return $this->post($url, $params);
     }
 

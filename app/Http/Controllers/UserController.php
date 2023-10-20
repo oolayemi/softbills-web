@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
+use App\Models\Wallet;
 use App\Rules\Phone;
 use App\Services\Helpers\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -48,9 +50,10 @@ class UserController extends Controller
     public function fetchWalletDetails(): JsonResponse
     {
         $user = \request()->user();
-        $walletDetails = $user->wallet()->with('virtualAccount')->first()->toArray();
+        $walletDetails = Wallet::first();
+        \Log::info("HErrrrr", [$walletDetails]);
 
-        return ApiResponse::success('Wallets fetched successfully', $walletDetails);
+        return ApiResponse::success('Wallets fetched successfully', $walletDetails->toArray());
     }
 
     public function userWalletTransactions(): JsonResponse
@@ -64,7 +67,8 @@ class UserController extends Controller
         return ApiResponse::success('Wallet transactions fetched successfully', $walletTransactions);
     }
 
-    public function changePassword(Request $request) {
+    public function changePassword(Request $request): JsonResponse
+    {
         $validated = $request->validate([
             'current_password' => 'required|string',
             'new_password' => ['required',
@@ -85,7 +89,8 @@ class UserController extends Controller
         return ApiResponse::success( "Password updated successfully");
     }
 
-    public function changePin(Request $request) {
+    public function changePin(Request $request): JsonResponse
+    {
         $validated = $request->validate([
             'current_pin' => 'required|string',
             'new_pin' => 'required|string|confirmed|digits:4',
