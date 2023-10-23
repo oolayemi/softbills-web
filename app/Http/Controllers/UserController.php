@@ -50,10 +50,9 @@ class UserController extends Controller
     public function fetchWalletDetails(): JsonResponse
     {
         $user = \request()->user();
-        $walletDetails = Wallet::first();
-        \Log::info("HErrrrr", [$walletDetails]);
+        $walletDetails = $user->wallet()->with('virtualAccount')->first()->toArray();
 
-        return ApiResponse::success('Wallets fetched successfully', $walletDetails->toArray());
+        return ApiResponse::success('Wallets fetched successfully', $walletDetails);
     }
 
     public function userWalletTransactions(): JsonResponse

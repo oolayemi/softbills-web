@@ -15,7 +15,7 @@ class Wallet extends Model
     protected $fillable = ['user_id', 'number', 'currency', 'balance'];
 
     protected $casts = [
-        'balance' => 'decimal'
+        'balance' => 'double'
     ];
 
     public function user(): BelongsTo

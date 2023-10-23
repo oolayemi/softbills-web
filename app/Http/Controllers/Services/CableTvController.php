@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Services;
 
+use App\Enums\ApiResponseEnum;
 use App\Http\Controllers\Controller;
 use App\Services\Constants\Providers;
 use App\Services\Helpers\ApiResponse;
@@ -50,8 +51,8 @@ class CableTvController extends Controller
         $response = $vtPass->validateSmartCard($data);
 
         if (empty($response) || !isset($response['content']) || (isset($response['code']) && $response['code'] != "000")) {
-            \Log::info("whats wrong", $data);
-            return ApiResponse::failed('An error occurred with fetching validating card details');
+            \Log::info("whats wrong", $response);
+            return ApiResponse::failed('An error occurred with fetching validating cable details');
         }
 
         return ApiResponse::success("SmartCard details validated successfully", ['data' => $response['content']]);
@@ -59,13 +60,20 @@ class CableTvController extends Controller
 
     public function purchase(Request $request, VtPassApis $vtPass)
     {
-        $data = $request->validate([
+        $request->validate([
             'service_id' => 'required',
             'billers_code' => 'required',
             'variation_code' => 'required',
             'amount' => 'required',
             'phone' => 'required',
         ]);
+
+        if (! checkWalletBalance($wallet, $data['amount'])) {
+            return response()->json([
+                'status' => ApiResponseEnum::failed(),
+                'message' => 'You don\'t have sufficient balance to continue.',
+            ]);
+        }
 
         $requestId = now()->format('YmdHi') . \Str::random(10);
         $user = $request->user();
@@ -79,7 +87,13 @@ class CableTvController extends Controller
             'subscription_type' => 'change'
         ];
 
-//        $vtPass->
+        $response = $vtPass->purchaseCableTv($data);
 
+        if (empty($response) || !isset($response['content']) || (isset($response['code']) && $response['code'] != "000")) {
+            \Log::info("whats wrong - purchase", $response);
+            return ApiResponse::failed('An error occurred with fetching validating cable details');
+        }
+
+        return ApiResponse::success("SmartCard details validated successfully", ['data' => $response['content']]);
     }
 }

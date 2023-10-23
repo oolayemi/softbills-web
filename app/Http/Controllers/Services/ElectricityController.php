@@ -20,7 +20,7 @@ class ElectricityController extends Controller
         {
             return ApiResponse::failed("An error occurred, please try again");
         }
-        return ApiResponse::success("Provider packages retrieved successfully", ['billers' => $response['content']]);
+        return ApiResponse::success("Provider packages retrieved successfully", $response['content']);
     }
 
     public function validateMeterNumber(Request $request, VtPassApis $vtPass): JsonResponse
@@ -30,6 +30,12 @@ class ElectricityController extends Controller
             'serviceID' => 'required|string',
             'type' => 'required|string',
         ]);
+
+        $data = [
+            'billersCode' => $validated['billers_code'],
+            'serviceID' => $validated['service_id'],
+            'type' => $validated['type']
+        ];
 
         $response = $vtPass->validateMeterNumber($validated);
 
