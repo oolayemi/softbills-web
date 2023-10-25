@@ -5,6 +5,9 @@ namespace App\Http\Controllers\Services;
 use App\Enums\ApiResponseEnum;
 use App\Http\Controllers\Controller;
 use App\Services\Constants\Providers;
+use App\Services\Enums\ServiceType;
+use App\Services\Enums\TransactionStatusEnum;
+use App\Services\Enums\TransactionTypeEnum;
 use App\Services\Helpers\ApiResponse;
 use App\Services\ThirdPartyAPIs\VtPassApis;
 use Illuminate\Http\JsonResponse;
@@ -92,6 +95,8 @@ class CableTvController extends Controller
         $requestId = now()->format('YmdHi') . \Str::random(10);
         $user = $request->user();
 
+        $wallet = $user->wallet;
+
         $data = [
             'request_id' => $requestId,
             'serviceID' => $request->service_id,
@@ -101,13 +106,66 @@ class CableTvController extends Controller
             'subscription_type' => 'change'
         ];
 
-        $response = $vtPass->purchaseCableTv($data);
+//        $response = $vtPass->purchaseCableTv($data);
+        $response = [
+            "code" => "000",
+            "content" => [
+                "transactions" => [
+                    "status" => "initiated",
+                    "channel" => "api",
+                    "transactionId" => "1563857332996",
+                    "method" => "api",
+                    "platform" => "api",
+                    "is_api" => 1,
+                    "discount" => null,
+                    "customer_id" => 100649,
+                    "email" => "sandbox@vtpass.com",
+                    "phone" => "07061933309",
+                    "type" => "TV Subscription",
+                    "convinience_fee" => "0.00",
+                    "commission" => 0.75,
+                    "amount" => $request->amount,
+                    "total_amount" => 49.25,
+                    "quantity" => 1,
+                    "unit_price" => "50",
+                    "updated_at" => "2019-07-23 05:48:52",
+                    "created_at" => "2019-07-23 05:48:52",
+                    "id" => 7349787
+                ]
+            ],
+            "response_description" => "TRANSACTION SUCCESSFUL",
+            "requestId" => "SAND000001112A9320223291",
+            "amount" => "50.00",
+            "transaction_date" => [
+                "date" => "2019-07-23 05:48:52.000000",
+                "timezone_type" => 3,
+                "timezone" => "Africa/Lagos"
+            ],
+            "purchased_code" => ""
+        ];
 
         if (empty($response) || !isset($response['content']) || (isset($response['code']) && $response['code'] != "000")) {
             \Log::info("whats wrong - purchase", $response);
             return ApiResponse::failed('An error occurred with fetching validating cable details');
         }
 
-        return ApiResponse::success("SmartCard details validated successfully", ['data' => $response['content']]);
+        $amount = $response['content']['transactions']['amount'];
+
+        $user->walletTransactions()->create([
+            'wallet_id' => $wallet->id,
+            'reference' => $response['requestId'],
+            'amount' => $amount,
+            'prev_balance' => $wallet->balance,
+            'new_balance' => $wallet->balance - $amount,
+            'service_type' => ServiceType::CABLE_TV->value,
+            'transaction_type' => TransactionTypeEnum::debit->name,
+            'status' => TransactionStatusEnum::SUCCESSFUL->name,
+            'narration' => 'You purchased TV subscription from ' . $request->service_id .' for ₦'.$amount,
+        ]);
+
+        $wallet->balance -= $amount;
+        $wallet->save();
+
+        return ApiResponse::success("TV subscription purchased successfully");
     }
 }

@@ -3,7 +3,6 @@
 namespace App\Services\Enums;
 enum ServiceType: string
 {
-
             case AIRTIME = 'airtime';
             case DATA = 'data';
             case EPIN = 'epin';
