@@ -69,7 +69,7 @@ class VtPassApis
 
     public function merchantPayment(array $params): array
     {
-        $url = sprintf('%s%s', $this->baseUrl, $this->Payment);
+        $url = sprintf('%s%s', $this->baseUrl, $this->payment);
         return $this->post($url, $params);
     }
 

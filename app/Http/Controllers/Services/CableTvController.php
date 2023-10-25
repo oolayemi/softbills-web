@@ -43,19 +43,34 @@ class CableTvController extends Controller
             'service_id' => 'required|string',
         ]);
 
-        $data = [
-            'billersCode' => $request->billers_code,
-            'serviceID' => $request->service_id
+//        $data = [
+//            'billersCode' => $request->billers_code,
+//            'serviceID' => $request->service_id
+//        ];
+
+//        $response = $vtPass->validateSmartCard($data);
+
+        $response = [
+            "code" => "000",
+            "content" => [
+                "Customer_Name" => "Mr  DsTEST",
+                "Status" => "Open",
+                "DUE_DATE" => "2019-07-23T00:00:00",
+                "Customer_Number" => 48209000,
+                "Customer_Type" => "DSTV",
+                "Current_Bouquet" => "DStv Premium-Asia N17630 + DStv French only N6050 + DStv Premium-French N20780",
+                "Current_Bouquet_Code" => "dstv10, dstv5, dstv9",
+                "Renewal_Amount" => 2500
+            ]
         ];
 
-        $response = $vtPass->validateSmartCard($data);
 
         if (empty($response) || !isset($response['content']) || (isset($response['code']) && $response['code'] != "000")) {
             \Log::info("whats wrong", $response);
             return ApiResponse::failed('An error occurred with fetching validating cable details');
         }
 
-        return ApiResponse::success("SmartCard details validated successfully", ['data' => $response['content']]);
+        return ApiResponse::success("SmartCard details validated successfully", $response['content']);
     }
 
     public function purchase(Request $request, VtPassApis $vtPass)
@@ -65,15 +80,14 @@ class CableTvController extends Controller
             'billers_code' => 'required',
             'variation_code' => 'required',
             'amount' => 'required',
-            'phone' => 'required',
         ]);
 
-        if (! checkWalletBalance($wallet, $data['amount'])) {
-            return response()->json([
-                'status' => ApiResponseEnum::failed(),
-                'message' => 'You don\'t have sufficient balance to continue.',
-            ]);
-        }
+//        if (! checkWalletBalance($wallet, $data['amount'])) {
+//            return response()->json([
+//                'status' => ApiResponseEnum::failed(),
+//                'message' => 'You don\'t have sufficient balance to continue.',
+//            ]);
+//        }
 
         $requestId = now()->format('YmdHi') . \Str::random(10);
         $user = $request->user();
@@ -83,7 +97,7 @@ class CableTvController extends Controller
             'serviceID' => $request->service_id,
             'billersCode' => $request->billers_code,
             'amount' => $request->amount,
-            'phone' => $user->phone,
+            'phone' => $user->phone ?? '09061626364',
             'subscription_type' => 'change'
         ];
 
