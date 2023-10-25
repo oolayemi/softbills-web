@@ -18,8 +18,7 @@ class ElectricityController extends Controller
     {
         $response = $vtPass->fetchElectricityProviders();
 
-        if (empty($response) || !isset($response['content']) || (isset($response['response_description']) && $response['response_description'] != "000"))
-        {
+        if (empty($response) || !isset($response['content']) || (isset($response['response_description']) && $response['response_description'] != "000")) {
             return ApiResponse::failed("An error occurred, please try again");
         }
         return ApiResponse::success("Provider packages retrieved successfully", $response['content']);
@@ -66,7 +65,7 @@ class ElectricityController extends Controller
         $request->validate([
             'service_id' => 'required|string',
             'billers_code' => 'required|string',
-            'variation_code' => ['required','string',Rule::in(['prepaid', 'postpaid'])],
+            'variation_code' => ['required', 'string', Rule::in(['prepaid', 'postpaid'])],
             'amount' => 'required|integer',
         ]);
 
