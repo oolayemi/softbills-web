@@ -9,6 +9,7 @@ use App\Services\Enums\ServiceType;
 use App\Services\Enums\TransactionStatusEnum;
 use App\Services\Enums\TransactionTypeEnum;
 use App\Services\Helpers\ApiResponse;
+use App\Services\Helpers\GeneralHelper;
 use App\Services\ThirdPartyAPIs\VtPassApis;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -85,17 +86,14 @@ class CableTvController extends Controller
             'amount' => 'required',
         ]);
 
-//        if (! checkWalletBalance($wallet, $data['amount'])) {
-//            return response()->json([
-//                'status' => ApiResponseEnum::failed(),
-//                'message' => 'You don\'t have sufficient balance to continue.',
-//            ]);
-//        }
-
         $requestId = now()->format('YmdHi') . \Str::random(10);
         $user = $request->user();
 
         $wallet = $user->wallet;
+
+        if (!GeneralHelper::hasEnoughBalance($wallet, $request->amount)){
+            return ApiResponse::failed("You don't have sufficient balance to continue");
+        }
 
         $data = [
             'request_id' => $requestId,

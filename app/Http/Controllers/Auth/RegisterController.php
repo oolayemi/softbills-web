@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Rules\Phone;
 use App\Services\Helpers\ApiResponse;
+use App\Services\ThirdPartyAPIs\MonnifyApis;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -36,7 +37,7 @@ class RegisterController extends Controller
         $validated['transaction_pin'] = sha1($validated['transaction_pin']);
 
         $user = User::create($validated);
-        self::createWallet($user);
+        self::createWallet($user, new MonnifyApis());
 
         $token = $user->createToken($request->email)->plainTextToken;
         $data = ['token' => $token];
@@ -44,29 +45,38 @@ class RegisterController extends Controller
         return ApiResponse::success('Account created successfully', $data);
     }
 
-    protected static function createWallet(User $user): void
+    protected static function createWallet(User $user, MonnifyApis $monnifyApis): void
     {
         $wallet = $user->wallet()->create();
 
-//        $payload = [
-//            'account_name' => sprintf('%s%s%s', $user->firstname, ' ', $user->lastname),
-//            'email' => $user->email,
-//        ];
-//
-//        $response = self::sageCloudServices()->createVirtualAccount($payload);
-//        $accountDetails = $response['data']->account_details;
-//
-//        if ($response['status'] == 'success') {
+        $payload = [
+            "accountReference" => \Str::random(14),
+            "accountName" => sprintf('%s %s', $user->firstname, $user->lastname),
+            "currencyCode" => "NGN",
+            "customerEmail" => $user->email,
+            "bvn" => "21212121212",
+            "customerName" => sprintf('%s %s', $user->firstname, $user->lastname),
+            "getAllAvailableBanks" => false,
+            "preferredBanks" => ["035"]
+        ];
+
+        $response = $monnifyApis->createVirtualAccount($payload);
+
+
+        if ($response['requestSuccessful']) {
+            $account = $response['responseBody']['accounts'][0];
             $wallet->virtualAccount()->create([
                 'user_id' => $user->id,
-                'account_name' => $user->firstname . " " . $user->lastname,
-                'account_number' => rand(1000000000, 9999999999),
-                'bank_name' => 'Test Bank',
-                'account_reference' => \Str::random(17),
+                'account_name' => $account['accountName'],
+                'account_number' => $account['accountNumber'],
+                'bank_name' => $account['bankName'],
+                'bank_code' => $account['bankCode'],
+                'provider' => 'MONNIFY',
+                'account_reference' => $response['responseBody']['accountReference'],
             ]);
-//        } else {
-//            Log::info("failed response from create virtual account from sagecloud", $response);
-//        }
+        } else {
+            Log::info("failed response from create virtual account from monnify", $response);
+        }
     }
 
 }

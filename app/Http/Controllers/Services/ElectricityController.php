@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Services\Enums\ServiceType;
 use App\Services\Enums\TransactionStatusEnum;
 use App\Services\Enums\TransactionTypeEnum;
+use App\Services\Helpers\GeneralHelper;
 use App\Services\ThirdPartyAPIs\VtPassApis;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -76,6 +77,10 @@ class ElectricityController extends Controller
 
         $user = $request->user();
         $wallet = $user->wallet;
+
+        if (!GeneralHelper::hasEnoughBalance($wallet, $request->amount)){
+            return ApiResponse::failed("You don't have sufficient balance to continue");
+        }
 
         $data = [
             'request_id' => $requestId,

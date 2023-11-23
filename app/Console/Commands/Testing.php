@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Services\ThirdPartyAPIs\MonnifyApis;
 use App\Services\ThirdPartyAPIs\VtPassApis;
 use Illuminate\Console\Command;
 
@@ -26,11 +27,8 @@ class Testing extends Command
      */
     public function handle()
     {
-        $vtPass = resolve(VtPassApis::class);
-        $response = $vtPass->validateSmartCard([
-            'billersCode' => 7032726137,
-            'serviceID' => 'gotv'
-        ]);
-        dd($response);
+        $vtPass = resolve(MonnifyApis::class);
+
+        dd($vtPass);
     }
 }

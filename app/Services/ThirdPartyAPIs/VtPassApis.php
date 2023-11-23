@@ -12,6 +12,8 @@ class VtPassApis
     private string $username;
     private string $password;
     private string $tvProviders = '/services?identifier=tv-subscription';
+    private string $airtimeProviders = '/services?identifier=airtime';
+    private string $dataProviders = '/services?identifier=data';
     private string $electricityProviders = '/services?identifier=electricity-bill';
     private string $serviceVariations = '/service-variations?serviceID=';
     private string $merchantVerify = '/merchant-verify';
@@ -29,6 +31,24 @@ class VtPassApis
             'Content-Type' => 'application/json',
             'Authorization' => sprintf('%s:%s',$this->username,$this->password)
         ];
+    }
+
+    public function fetchAirtimeProviders(): array
+    {
+        $url = sprintf('%s%s', $this->baseUrl, $this->airtimeProviders);
+        return $this->get($url);
+    }
+
+    public function fetchDataProviders(): array
+    {
+        $url = sprintf('%s%s', $this->baseUrl, $this->dataProviders);
+        return $this->get($url);
+    }
+
+    public function fetchDataBundles(string $type): array
+    {
+        $url = sprintf('%s%s%s', $this->baseUrl, $this->serviceVariations, $type);
+        return $this->get($url);
     }
 
     public function fetchTvProviders(): array

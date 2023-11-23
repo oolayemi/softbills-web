@@ -41,6 +41,13 @@ return [
         'base_url' => env('MEGA_SUB_BASEURL'),
         'token' => env('MEGA_SUB_TOKEN'),
         'password' => env('MEGA_SUB_PASSWORD'),
+    ],
+
+    'monnify' => [
+        'base_url' => env('MONNIFY_BASEURL'),
+        'api_key' => env('MONNIFY_API_KEY'),
+        'secret_key' => env('MONNIFY_SECRET_KEY'),
+        'contract_code' => env('MONNIFY_CONTRACT_CODE'),
     ]
 
 ];

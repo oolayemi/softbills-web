@@ -11,7 +11,10 @@ class VirtualAccount extends Model
 {
     use HasFactory, HasUuids;
 
-    protected $fillable = ['user_id', 'wallet_id', 'account_name', 'account_number', 'account_reference', 'bank_name'];
+    protected $fillable = ['user_id',
+        'wallet_id', 'account_name',
+        'account_number', 'account_reference',
+        'bank_name', 'provider', 'bank_code'];
 
     /**
      * A user has a wallet

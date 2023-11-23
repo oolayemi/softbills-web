@@ -3,7 +3,9 @@
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\NokInformationController;
+use App\Http\Controllers\Services\AirtimeController;
 use App\Http\Controllers\Services\CableTvController;
+use App\Http\Controllers\Services\DataController;
 use App\Http\Controllers\Services\ElectricityController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
@@ -61,7 +63,14 @@ Route::prefix('v1')->group(function () {
         });
 
         Route::prefix('airtime')->group(function () {
-            Route::post('buy', [AirtimeController::class, 'buyAirtime']);
+            Route::get('providers', [AirtimeController::class, 'providers']);
+            Route::post('purchase', [AirtimeController::class, 'purchase']);
+        });
+
+        Route::prefix('data')->group(function () {
+            Route::get('providers', [DataController::class, 'providers']);
+            Route::get('{provider}/bundles', [DataController::class, 'dataBundle']);
+            Route::post('purchase', [DataController::class, 'purchase']);
         });
     });
 });
