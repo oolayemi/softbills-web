@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Wallet;
 use App\Rules\Phone;
 use App\Services\Helpers\ApiResponse;
+use App\Services\ThirdPartyAPIs\CrystalPayApis;
 use App\Services\ThirdPartyAPIs\MonnifyApis;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -45,9 +47,17 @@ class RegisterController extends Controller
         return ApiResponse::success('Account created successfully', $data);
     }
 
-    protected static function createWallet(User $user, MonnifyApis $monnifyApis): void
+    protected static function createWallet(User $user): void
     {
         $wallet = $user->wallet()->create();
+        self::createMonnifyVirtualAccount($user, $wallet);
+        self::createCrystalPayVirtualAccount($user, $wallet);
+
+    }
+
+    protected static function createMonnifyVirtualAccount(User $user, Wallet $wallet)
+    {
+        $monnifyApis = resolve(MonnifyApis::class);
 
         $payload = [
             "accountReference" => \Str::random(14),
@@ -57,26 +67,47 @@ class RegisterController extends Controller
             "bvn" => "21212121212",
             "customerName" => sprintf('%s %s', $user->firstname, $user->lastname),
             "getAllAvailableBanks" => false,
-            "preferredBanks" => ["035"]
+            "preferredBanks" => ["035", "058"]
         ];
 
         $response = $monnifyApis->createVirtualAccount($payload);
 
 
         if ($response['requestSuccessful']) {
-            $account = $response['responseBody']['accounts'][0];
-            $wallet->virtualAccount()->create([
-                'user_id' => $user->id,
-                'account_name' => $account['accountName'],
-                'account_number' => $account['accountNumber'],
-                'bank_name' => $account['bankName'],
-                'bank_code' => $account['bankCode'],
-                'provider' => 'MONNIFY',
-                'account_reference' => $response['responseBody']['accountReference'],
-            ]);
+            $accounts = $response['responseBody']['accounts'];
+            foreach ($accounts as $account) {
+                $wallet->virtualAccount()->create([
+                    'user_id' => $user->id,
+                    'account_name' => $account['accountName'],
+                    'account_number' => $account['accountNumber'],
+                    'bank_name' => $account['bankName'],
+                    'bank_code' => $account['bankCode'],
+                    'provider' => 'MONNIFY',
+                    'account_reference' => $response['responseBody']['accountReference'],
+                ]);
+            }
+
         } else {
             Log::info("failed response from create virtual account from monnify", $response);
         }
+    }
+
+    protected static function createCrystalPayVirtualAccount(User $user, Wallet $wallet)
+    {
+        $crystalPayApis = resolve(CrystalPayApis::class);
+
+        $details = [
+            "firstname" => $user->firstname,
+            "lastname" => $user->lastname,
+            "email" => $user->email,
+            "virtual_account_package" => ["7", "3"],
+            "bvn" => "0123456789"
+        ];
+
+        $response = $crystalPayApis->createVirtualAccount($details);
+
+        Log::info("response from CrystalPay virtual account generation", $response);
+
     }
 
 }
