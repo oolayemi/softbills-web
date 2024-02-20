@@ -39,7 +39,7 @@ class RegisterController extends Controller
         $validated['transaction_pin'] = sha1($validated['transaction_pin']);
 
         $user = User::create($validated);
-        self::createWallet($user, new MonnifyApis());
+        self::createWallet($user);
 
         $token = $user->createToken($request->email)->plainTextToken;
         $data = ['token' => $token];
