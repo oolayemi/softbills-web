@@ -67,7 +67,7 @@ class MonnifyApis
     protected function post(string $url, array $params): array
     {
         $res = Http::withToken($this->access_token)->post($url, $params);
-
+        \Log::info("response from here", $res->json() ?? [$res]);
         return $this->response($res);
     }
 

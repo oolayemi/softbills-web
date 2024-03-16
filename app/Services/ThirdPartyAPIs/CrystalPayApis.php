@@ -36,6 +36,7 @@ class CrystalPayApis
     protected function post(string $url, array $params): array
     {
         $res = Http::withHeaders($this->headers())->post($url, $params);
+        \Log::info("response from here", $res->json() ?? [$res]);
         return $this->response($res);
     }
 

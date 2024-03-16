@@ -50,7 +50,7 @@ class RegisterController extends Controller
     protected static function createWallet(User $user): void
     {
         $wallet = $user->wallet()->create();
-        self::createMonnifyVirtualAccount($user, $wallet);
+//        self::createMonnifyVirtualAccount($user, $wallet);
         self::createCrystalPayVirtualAccount($user, $wallet);
 
     }
@@ -67,11 +67,12 @@ class RegisterController extends Controller
             "bvn" => "21212121212",
             "customerName" => sprintf('%s %s', $user->firstname, $user->lastname),
             "getAllAvailableBanks" => false,
-            "preferredBanks" => ["035", "058"]
+            "preferredBanks" => ["035"]
         ];
 
         $response = $monnifyApis->createVirtualAccount($payload);
 
+        Log::info("creating monnify virtual account", $response);
 
         if ($response['requestSuccessful']) {
             $accounts = $response['responseBody']['accounts'];
