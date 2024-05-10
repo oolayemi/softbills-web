@@ -13,6 +13,10 @@ class NokInformation extends Model
 
     protected $fillable = ['user_id', 'firstname', 'lastname', 'email', 'address', 'phone', 'relationship'];
 
+    protected $hidden = [
+        'user_id','created_at', 'updated_at'
+    ];
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

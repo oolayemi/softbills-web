@@ -130,6 +130,6 @@ class DataController extends Controller
         $wallet->balance -= $amount;
         $wallet->save();
 
-        return ApiResponse::success("Airtime purchase successfully");
+        return ApiResponse::success("Data purchase successfully");
     }
 }
