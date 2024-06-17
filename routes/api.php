@@ -28,7 +28,13 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 Route::prefix('v1')->group(function () {
     Route::prefix('auth')->group(function () {
-        Route::post('register', RegisterController::class);
+        Route::prefix('register')->group(function () {
+            Route::post('phone/validate', [RegisterController::class, 'validatePhone']);
+            Route::post('phone/verify', [RegisterController::class, 'verifyPhoneOtp']);
+            Route::post('email/validate', [RegisterController::class, 'validateEmail']);
+            Route::post('email/verify', [RegisterController::class, 'verifyEmailOtp']);
+            Route::post('', RegisterController::class);
+        });
         Route::post('login', LoginController::class);
     });
 

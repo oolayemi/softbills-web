@@ -34,6 +34,8 @@ class User extends Authenticatable
         'device_id',
         'email_verified_at',
         'phone_verified_at',
+        'date_of_birth',
+        'remember_token',
     ];
 
     /**
@@ -53,6 +55,8 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'phone_verified_at' => 'datetime',
+        'date_of_birth' => 'datetime',
         'password' => 'hashed',
         'tier' => 'integer',
     ];

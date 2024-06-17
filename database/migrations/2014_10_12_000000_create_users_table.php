@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('gender');
             $table->string('phone');
             $table->string('transaction_pin')->nullable();
+            $table->date('date_of_birth')->nullable();
             $table->string('password');
             $table->string('image_url')->nullable();
 

@@ -32,6 +32,48 @@ class RegisterController extends Controller
         ];
     }
 
+    public function validatePhone(Request $request) {
+        $request->validate([
+            'phone' => ['required', 'string', 'unique:users,phone', new Phone],
+        ]);
+
+        // send message
+
+        return ApiResponse::success("SMS sent successfully");
+    }
+
+    public function verifyPhoneOtp(Request $request)
+    {
+        $request->validate([
+            'phone' => ['required', 'unique:users,phone', new Phone],
+            'otp' => ['required', 'string', 'digits:6'],
+        ]);
+
+        //validate otp
+        return ApiResponse::success("Phone number verified successfully");
+    }
+
+    public function validateEmail(Request $request) {
+        $request->validate([
+            'email' => ['required', 'email', 'unique:users,email'],
+        ]);
+
+        // send message
+
+        return ApiResponse::success("Email sent successfully");
+    }
+
+    public function verifyEmailOtp(Request $request)
+    {
+        $request->validate([
+            'email' => ['required', 'email', 'unique:users,email'],
+            'otp' => ['required', 'string', 'digits:6'],
+        ]);
+
+        //validate otp
+        return ApiResponse::success("Email verified successfully");
+    }
+
     public function __invoke(Request $request): JsonResponse
     {
         $validated = $request->validate($this->rules());
