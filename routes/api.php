@@ -8,6 +8,7 @@ use App\Http\Controllers\Services\CableTvController;
 use App\Http\Controllers\Services\DataController;
 use App\Http\Controllers\Services\ElectricityController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\WalletController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -39,6 +40,13 @@ Route::prefix('v1')->group(function () {
     });
 
     Route::middleware(['auth:sanctum'])->group(function () {
+        Route::prefix('wallet')->group(function () {
+            Route::get('bank-list', [WalletController::class, 'getBanks']);
+            Route::post('name-enquiry', [WalletController::class, 'validateName']);
+
+        });
+
+
         Route::prefix('user')->group(function () {
             Route::get('profile', [UserController::class, 'userProfile']);
             Route::post('profile/update', [UserController::class, 'editProfile']);

@@ -1,0 +1,52 @@
+{
+    "success": true,
+    "status": "success",
+    "message": "Banks fetched successfully",
+    "data": [
+        {
+            "name": "78 FINANCE COMPANY LIMITED",
+            "code": "110072",
+            "ussdTemplate": null,
+            "baseUssdCode": null,
+            "transferUssdTemplate": null,
+            "bankId": null,
+            "nipBankCode": "110072"
+        },
+        {
+            "name": "9 PAYMENT SOLUTIONS BANK",
+            "code": "120001",
+            "ussdTemplate": null,
+            "baseUssdCode": null,
+            "transferUssdTemplate": null,
+            "bankId": null,
+            "nipBankCode": "120001"
+        },
+        {
+            "name": "9JAPAY MICROFINANCE BANK",
+            "code": "090629",
+            "ussdTemplate": null,
+            "baseUssdCode": null,
+            "transferUssdTemplate": null,
+            "bankId": null,
+            "nipBankCode": "090629"
+        },
+        {
+            "name": "AB MICROFINANCE BANK ",
+            "code": "090270",
+            "ussdTemplate": null,
+            "baseUssdCode": null,
+            "transferUssdTemplate": null,
+            "bankId": null,
+            "nipBankCode": "090270"
+        },
+        {
+            "name": "ABBEY MORTGAGE BANK",
+            "code": "070010",
+            "ussdTemplate": null,
+            "baseUssdCode": null,
+            "transferUssdTemplate": null,
+            "bankId": null,
+            "nipBankCode": "070010"
+        }
+    ]
+}

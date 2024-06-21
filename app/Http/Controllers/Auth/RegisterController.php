@@ -26,7 +26,8 @@ class RegisterController extends Controller
             'gender' => ['required', 'string', Rule::in(['Male', 'Female'])],
             'phone' => ['required', 'unique:users,phone', new Phone],
             'device_id' => 'required|string',
-            'transaction_pin' => 'required|string|digits:4',
+            'date_of_birth' => 'required|date',
+//            'transaction_pin' => 'required|string|digits:4',
 
             'password' => 'required|min:8|max:20',
         ];
@@ -58,7 +59,7 @@ class RegisterController extends Controller
             'email' => ['required', 'email', 'unique:users,email'],
         ]);
 
-        // send message
+        // send messag
 
         return ApiResponse::success("Email sent successfully");
     }
@@ -78,7 +79,7 @@ class RegisterController extends Controller
     {
         $validated = $request->validate($this->rules());
         $validated['password'] = Hash::make($validated['password']);
-        $validated['transaction_pin'] = sha1($validated['transaction_pin']);
+//        $validated['transaction_pin'] = sha1($validated['transaction_pin']);
 
         $user = User::create($validated);
         self::createWallet($user);

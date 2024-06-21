@@ -5,9 +5,11 @@ namespace App\Services\ThirdPartyAPIs;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 
-class CrystalPayApis
+class
+CrystalPayApis
 {
     private const CREATE_VIRTUAL_ACCOUNT = '/virtual-account';
+    private const BANK_LIST = '/transfer/bank-list';
 
     private string $baseUrl;
     private string $secretKey;
@@ -31,6 +33,12 @@ class CrystalPayApis
     {
         $url = sprintf('%s%s', $this->baseUrl, self::CREATE_VIRTUAL_ACCOUNT);
         return $this->post($url, $params);
+    }
+
+    public function getBanks(): array
+    {
+        $url = sprintf('%s%s', $this->baseUrl, self::BANK_LIST);
+        return $this->get($url);
     }
 
     protected function post(string $url, array $params): array

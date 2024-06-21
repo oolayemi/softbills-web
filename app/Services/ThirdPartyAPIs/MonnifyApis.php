@@ -11,6 +11,10 @@ class MonnifyApis
 {
     private const CREATE_VIRTUAL_ACCOUNT = '/api/v2/bank-transfer/reserved-accounts';
 
+    private const GET_BANKS = '/api/v1/banks';
+
+    private const NAME_VALIDATE = "/api/v1/disbursements/account/validate";
+
     private string $baseUrl;
     private string $apiKey;
 
@@ -61,6 +65,18 @@ class MonnifyApis
         $params['contractCode'] = $this->contractCode;
         $url = sprintf('%s%s', $this->baseUrl, self::CREATE_VIRTUAL_ACCOUNT);
         return $this->post($url, $params);
+    }
+
+    public function getBanks(): array
+    {
+        $url = sprintf('%s%s', $this->baseUrl, self::GET_BANKS);
+        return $this->get($url);
+    }
+
+    public function nameEnquiry(array $params): array
+    {
+        $url = sprintf('%s%s', $this->baseUrl, self::NAME_VALIDATE);
+        return $this->get($url, $params);
     }
 
 
