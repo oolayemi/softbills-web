@@ -2,6 +2,7 @@
 
 namespace App\Services\ThirdPartyAPIs;
 
+//use Capiflex\SageCloud\API\SageCloud;
 use Carbon\Carbon;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Cache;
@@ -9,6 +10,7 @@ use Illuminate\Support\Facades\Http;
 
 class SageCloudServices
 {
+//    public SageCloud $sageCloud;
 
     private const BASE_URL = 'https://sagecloud.ng/api';
 
@@ -99,38 +101,46 @@ class SageCloudServices
 
     private $access_token;
 
-    public function __construct()
+    public function __construct($isV3 = false)
     {
-        $credentials = [
-            'email' => config('sagecloud.email'),
-            'password' => config('sagecloud.password'),
-        ];
+        if ($isV3) {
+            $email = config('sagecloud.email');
+            $password = config('sagecloud.password');
+            $secret_key = config('sagecloud.secret_key');
 
-        $this->email = $credentials['email'];
-        $this->password = $credentials['password'];
+//            $this->sageCloud = new SageCloud($email, $password, $secret_key);
 
-        //check for existing token in cache
-        $sageCloudKey = Cache::get('sage-cloud-key');
+        } else {
+            $credentials = [
+                'email' => config('sagecloud.email'),
+                'password' => config('sagecloud.password'),
+            ];
 
-        if (empty($sageCloudKey)) {
-            $this->getToken();
+            $this->email = $credentials['email'];
+            $this->password = $credentials['password'];
 
-            return;
+            //check for existing token in cache
+            $sageCloudKey = Cache::get('sage-cloud-key');
+
+            if (empty($sageCloudKey)) {
+                $this->getToken();
+
+                return;
+            }
+
+            $expires_at = Carbon::parse($sageCloudKey['expires_at']);
+
+            if (now()->diffInHours($expires_at) <= 2) {
+                $this->getToken();
+
+                return;
+            }
+            $this->access_token = $sageCloudKey['access_token'];
         }
-
-        $expires_at = Carbon::parse($sageCloudKey['expires_at']);
-
-        if (now()->diffInHours($expires_at) <= 2) {
-            $this->getToken();
-
-            return;
-        }
-        $this->access_token = $sageCloudKey['access_token'];
-
     }
 
     /**
-     * @param array $params array<string, string> ['reference' => <string>, 'network' => <string>, 'service' => <string>, 'phone' => <string>, 'amount' => <string>]
+     * @param  array  $params array<string, string> ['reference' => <string>, 'network' => <string>, 'service' => <string>, 'phone' => <string>, 'amount' => <string>]
      */
     public function purchaseAirtime(array $params): array
     {
@@ -394,10 +404,10 @@ class SageCloudServices
         return $this->response($res);
     }
 
-    public function createVirtualAccount($payload): array
-    {
-        return $this->sageCloud->generateVirtualAccount($payload);
-    }
+//    public function createVirtualAccount($payload): array
+//    {
+//        return $this->sageCloud->generateVirtualAccount($payload);
+//    }
 
     private function response(Response $response): array
     {
