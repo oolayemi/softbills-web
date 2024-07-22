@@ -28,10 +28,10 @@ class WalletController extends Controller
 
         $response = $sageCloud->verifyBankDetails($request->all());
 
-        if (! $response['success']) {
+        if (! isset($response['success']) || ! $response['success']) {
             return ApiResponse::failed("An error occurred while validating bank details.");
         }
 
-        return ApiResponse::success("Bank details retrieved successfully", $response);
+        return ApiResponse::success("Bank details retrieved successfully", ['account_name' => $response['account_name']]);
     }
 }
