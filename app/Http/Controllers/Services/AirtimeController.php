@@ -7,6 +7,7 @@ use App\Services\Enums\ServiceType;
 use App\Services\Enums\TransactionStatusEnum;
 use App\Services\Enums\TransactionTypeEnum;
 use App\Services\Helpers\GeneralHelper;
+use App\Services\ThirdPartyAPIs\SageCloudServices;
 use App\Services\ThirdPartyAPIs\VtPassApis;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -21,6 +22,12 @@ use App\Rules\Phone;
 
 class AirtimeController extends Controller
 {
+    private $service_code = [
+        'mtn' => 'MTNVTU',
+        'airtel' => 'AIRTELVTU',
+        '9mobile' => '9MOBILEVTU',
+        'glo' => 'GLOVTU',
+    ];
 
     public function providers(VtPassApis $vtPass): JsonResponse
     {
@@ -35,70 +42,55 @@ class AirtimeController extends Controller
         return ApiResponse::success("Airtime providers packages retrieved successfully", $response['content']);
     }
 
-    public function purchase(Request $request, VtPassApis $vtPass): JsonResponse
+    public function purchase(Request $request, SageCloudServices $sageCloud): JsonResponse
     {
+        $user = $request->user();
+
         $request->validate([
-            'service_id' => 'required|string',
-            'amount' => 'required|numeric|decimal:0,2',
-            'phone' => ['required', new Phone]
+            'mobile' => ['required', new Phone],
+            'amount' => ['required', 'numeric', 'decimal:0,2'],
+            'operator' => ['required'],
         ]);
 
-        $requestId = now()->format('YmdHi') . Str::random(10);
-
-        $user = $request->user();
+        $data = $request->all();
         $wallet = $user->wallet;
 
-        if (!GeneralHelper::hasEnoughBalance($wallet, $request->amount)){
+        if (!GeneralHelper::hasEnoughBalance($wallet, $request->amount)) {
             return ApiResponse::failed("You don't have sufficient balance to continue");
         }
 
-        $data = [
-            'request_id' => $requestId,
-            'serviceID' => $request->service_id,
-            'amount' => $request->amount,
-            'phone' => $request->phone ?? "09061626364"
+        $payload = [
+            'reference' => GeneralHelper::generateReference(ServiceType::AIRTIME->value),
+            'network' => strtoupper($data['operator']),
+            'service' => $this->service_code[$data['operator']],
+            'phone' => $data['mobile'],
+            'amount' => $data['amount'],
         ];
 
-        Log::info("payload for purchase airtime", $data);
+        $amount = floatval($request->amount);
 
-//        $response = $vtPass->merchantPayment($data);
-        $response = [
-            "code" => "000",
-            "response_description" => "TRANSACTION SUCCESSFUL",
-            "requestId" => "SAND0192837465738253A1HSD",
-            "transactionId" => "1563873435424",
-            "amount" => $request->amount,
-            "transaction_date" => [
-                "date" => "2019-07-23 10 => 17 => 16.000000",
-                "timezone_type" => 3,
-                "timezone" => "Africa/Lagos"
-            ],
-            "purchased_code" => ""
-        ];
+        $response = $sageCloud->purchaseAirtime($payload);
 
-        $amount = $response['amount'];
-        $productName = $request->service_id;
+        if ($response['status'] != 'failed') {
 
-        if (empty($response) || (isset($response['code']) && $response['code'] != "000")) {
-            Log::info("purchase airtime response", $response);
-            return ApiResponse::failed('An error occurred with purchasing airtime');
+            $user->walletTransactions()->create([
+                'wallet_id' => $wallet->id,
+                'reference' => $payload['reference'],
+                'amount' => $amount,
+                'prev_balance' => $wallet->balance,
+                'new_balance' => $wallet->balance - $amount,
+                'service_type' => ServiceType::AIRTIME->value,
+                'transaction_type' => TransactionTypeEnum::debit->name,
+                'status' => TransactionStatusEnum::SUCCESSFUL->name,
+                'narration' => $payload['network'] . ' airtime purchased of ₦' . $payload['amount'] . ' to ' . $payload['phone']
+            ]);
+
+            $wallet->balance -= $amount;
+            $wallet->save();
+
+            return ApiResponse::success("Airtime request submitted");
         }
 
-        $user->walletTransactions()->create([
-            'wallet_id' => $wallet->id,
-            'reference' => $response['requestId'],
-            'amount' => $amount,
-            'prev_balance' => $wallet->balance,
-            'new_balance' => $wallet->balance - $amount,
-            'service_type' => ServiceType::AIRTIME->value,
-            'transaction_type' => TransactionTypeEnum::debit->name,
-            'status' => TransactionStatusEnum::SUCCESSFUL->name,
-            'narration' => 'You purchased airtime from ' . $productName . ' for ₦' . $amount,
-        ]);
-
-        $wallet->balance -= $amount;
-        $wallet->save();
-
-        return ApiResponse::success("Airtime purchase successfully");
+        return ApiResponse::failed("Your airtime request failed");
     }
 }

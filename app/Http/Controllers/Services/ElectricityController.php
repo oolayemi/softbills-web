@@ -7,6 +7,7 @@ use App\Services\Enums\ServiceType;
 use App\Services\Enums\TransactionStatusEnum;
 use App\Services\Enums\TransactionTypeEnum;
 use App\Services\Helpers\GeneralHelper;
+use App\Services\ThirdPartyAPIs\SageCloudServices;
 use App\Services\ThirdPartyAPIs\VtPassApis;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -18,137 +19,72 @@ use Illuminate\Validation\Rule;
 
 class ElectricityController extends Controller
 {
-    public function providers(VtPassApis $vtPass): JsonResponse
+    public function providers(SageCloudServices $sageCloud): JsonResponse
     {
-        $response = $vtPass->fetchElectricityProviders();
+        $response = $sageCloud->fetchElectricityBillers();
 
-        if (empty($response) || !isset($response['content']) || (isset($response['response_description']) && $response['response_description'] != "000")) {
-            return ApiResponse::failed("An error occurred, please try again");
+        if (! $response['success']) {
+            return ApiResponse::failed("An error occurred while fetching electricity billers");
         }
-        return ApiResponse::success("Provider packages retrieved successfully", $response['content']);
+
+        sort($response['billers']);
+
+        return ApiResponse::success("Electricity billers fetched successfully", $response['billers']);
     }
 
-    public function validateMeterNumber(Request $request, VtPassApis $vtPass): JsonResponse
+    public function validateMeterNumber(Request $request, SageCloudServices $sageCloud): JsonResponse
     {
         $validated = $request->validate([
-            'billers_code' => 'required|string',
-            'service_id' => 'required|string',
-            'type' => 'required|string',
+            'type' => 'required',
+            'account_number' => 'required|string',
         ]);
 
-        $data = [
-            'billersCode' => $validated['billers_code'],
-            'serviceID' => $validated['service_id'],
-            'type' => $validated['type']
-        ];
+        $response = $sageCloud->validateMeter($validated);
 
-//        $response = $vtPass->validateMeterNumber($data);
-
-        #TODO: TO delete later
-        $response = [
-            "code" => "000",
-            "content" => [
-                "Customer_Name" => "TESTMETER1",
-                "Meter_Number" => "1111111111111",
-                "Business_Unit" => "",
-                "Address" => "ABULE - EGBA BU ABULE",
-                "Customer_Arrears" => ""
-            ]
-        ];
-
-        if (empty($response) || !isset($response['content']) || (isset($response['code']) && $response['code'] != "000")) {
-            Log::info("validate meter number response", $response);
-            return ApiResponse::failed('An error occurred with fetching meter number validation details');
+        if (! $response['success']) {
+            return ApiResponse::failed("An error occurred while validating meter number");
         }
 
-        return ApiResponse::success("Meter Number details validated successfully", $response['content']);
+        return ApiResponse::success("Meter number fetched successfully", $response['customer']);
     }
 
-    public function purchase(Request $request, VtPassApis $vtPass): JsonResponse
+    public function purchase(Request $request, SageCloudServices $sageCloud): JsonResponse
     {
-        $request->validate([
-            'service_id' => 'required|string',
-            'billers_code' => 'required|string',
-            'variation_code' => ['required', 'string', Rule::in(['prepaid', 'postpaid'])],
-            'amount' => 'required|integer',
+        $user = $request->user();
+
+        $data = $request->validate([
+            'type' => 'required',
+            'account_number' => 'required|string',
+            'amount' => 'required|decimal:0,2',
         ]);
 
-        $requestId = now()->format('YmdHi') . Str::random(10);
+        $validatedMeter = $sageCloud->validateMeter($data);
 
-        $user = $request->user();
+        if (! $validatedMeter['success']) {
+            return ApiResponse::failed("An error occurred while validating meter");
+        }
+
+        $payload = [
+            'reference' => GeneralHelper::generateReference(ServiceType::ELECTRICITY->value),
+            'type' => $data['type'],
+            'disco' => $validatedMeter['customer']['disco'] ?? $validatedMeter['customer']['billerName'],
+            'account_number' => $data['account_number'],
+            'phone' => $validatedMeter['customer']['phoneNumber'] ?? $user->phone_number ?? '09061628409',
+            'amount' => $data['amount'],
+        ];
+
         $wallet = $user->wallet;
 
         if (!GeneralHelper::hasEnoughBalance($wallet, $request->amount)){
             return ApiResponse::failed("You don't have sufficient balance to continue");
         }
 
-        $data = [
-            'request_id' => $requestId,
-            'serviceID' => $request->service_id,
-            'billersCode' => $request->billers_code,
-            'variation_code' => $request->variation_code,
-            'amount' => $request->amount,
-            'phone' => $user->phone ?? "09061626364"
-        ];
-
-        Log::info("payload for purchase electricity", $data);
-
-//        $response = $vtPass->merchantPayment($data);
-        $response = [
-            "code" => "000",
-            "content" => [
-                "transactions" => [
-                    "amount" => $request->amount,
-                    "convinience_fee" => 0,
-                    "status" => "delivered",
-                    "name" => null,
-                    "phone" => "07061933309",
-                    "email" => "sandbox@vtpass.com",
-                    "type" => "Electricity Bill",
-                    "created_at" => "2019-08-17 02:27:26",
-                    "discount" => null,
-                    "giftcard_id" => null,
-                    "total_amount" => 992,
-                    "commission" => 8,
-                    "channel" => "api",
-                    "platform" => "api",
-                    "service_verification" => null,
-                    "quantity" => 1,
-                    "unit_price" => 1000,
-                    "unique_element" => "1010101010101",
-                    "product_name" => "Eko Electric Payment - EKEDC"
-                ]
-            ],
-            "response_description" => "TRANSACTION SUCCESSFUL",
-            "requestId" => "hg3hgh3gdiud4w2wb33",
-            "amount" => "1000.00",
-            "transaction_date" => [
-                "date" => "2019-08-17 02:27:27.000000",
-                "timezone_type" => 3,
-                "timezone" => "Africa/Lagos"
-            ],
-            "purchased_code" => "Token : 42167939781206619049 Bonus Token : 62881559799402440206",
-            "mainToken" => "42167939781206619049",
-            "mainTokenDescription" => "Normal Sale",
-            "mainTokenUnits" => 16666.666,
-            "mainTokenTax" => 442.11,
-            "mainsTokenAmount" => 3157.89,
-            "bonusToken" => "62881559799402440206",
-            "bonusTokenDescription" => "FBE Token",
-            "bonusTokenUnits" => 50,
-            "bonusTokenTax" => null,
-            "bonusTokenAmount" => null,
-            "tariffIndex" => "52",
-            "debtDescription" => "1122"
-        ];
-
-        $amount = $response['content']['transactions']['amount'];
-        $productName = $response['content']['transactions']['product_name'];
-
-        if (empty($response) || !isset($response['content']) || (isset($response['code']) && $response['code'] != "000")) {
-            Log::info("purchase meter number response", $response);
-            return ApiResponse::failed('An error occurred with fetching meter number validation details');
+        $response = $sageCloud->purchasePower($payload);
+        if (! $response['success'] || ! isset($response['status']) || $response['status'] == 'failed') {
+            return ApiResponse::failed("Your electricity purchase request failed");
         }
+
+        $amount = $request->amount;
 
         $user->walletTransactions()->create([
             'wallet_id' => $wallet->id,
@@ -159,12 +95,12 @@ class ElectricityController extends Controller
             'service_type' => ServiceType::ELECTRICITY->value,
             'transaction_type' => TransactionTypeEnum::debit->name,
             'status' => TransactionStatusEnum::SUCCESSFUL->name,
-            'narration' => 'You purchased electricity from ' . $productName .' for ₦'.$amount,
+            'narration' => 'You purchased electricity from '.$payload['disco'].' for ₦'.$payload['amount'],
         ]);
 
         $wallet->balance -= $amount;
         $wallet->save();
 
-        return ApiResponse::success("Electricity purchase successfully");
+        return ApiResponse::success("Electricity purchase request submitted");
     }
 }

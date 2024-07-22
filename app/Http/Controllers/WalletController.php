@@ -4,40 +4,34 @@ namespace App\Http\Controllers;
 
 use App\Services\Helpers\ApiResponse;
 use App\Services\ThirdPartyAPIs\MonnifyApis;
+use App\Services\ThirdPartyAPIs\SageCloudServices;
 use Illuminate\Http\Request;
 
 class WalletController extends Controller
 {
-    public function getBanks() {
-        $monnify = new MonnifyApis();
-        $response = $monnify->getBanks();
+    public function getBanks(SageCloudServices $sageCloud) {
+        $response = $sageCloud->fetchBanks();
 
-        if (isset($response['requestSuccessful']) && $response['requestSuccessful']) {
-            return ApiResponse::success("Banks fetched successfully", $response['responseBody']);
+        if (! $response['success']) {
+            return ApiResponse::failed("An error occurred while fetching banks list.");
         }
 
-        return ApiResponse::failed("An error occurred while fetching banks");
+        return ApiResponse::success("Banks fetched successfully", $response['banks']);
     }
 
-    public function validateName(Request $request)
+    public function validateName(Request $request, SageCloudServices $sageCloud)
     {
         $request->validate([
             'bank_code' => 'required',
             'account_number' => 'required',
         ]);
 
-        $data = [
-            'accountNumber' => $request->account_number,
-            'bankCode' => $request->bank_code,
-        ];
+        $response = $sageCloud->verifyBankDetails($request->all());
 
-        $monnify = new MonnifyApis();
-        $response = $monnify->nameEnquiry($data);
-
-        if (isset($response['requestSuccessful']) && $response['requestSuccessful']) {
-            return ApiResponse::success("Banks fetched successfully", $response['responseBody']);
+        if (! $response['success']) {
+            return ApiResponse::failed("An error occurred while validating bank details.");
         }
 
-        return ApiResponse::failed("An error occurred while validating name");
+        return ApiResponse::success("Bank details retrieved successfully", $response);
     }
 }

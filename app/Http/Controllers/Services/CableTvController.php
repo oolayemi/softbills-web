@@ -10,84 +10,61 @@ use App\Services\Enums\TransactionStatusEnum;
 use App\Services\Enums\TransactionTypeEnum;
 use App\Services\Helpers\ApiResponse;
 use App\Services\Helpers\GeneralHelper;
+use App\Services\ThirdPartyAPIs\SageCloudServices;
 use App\Services\ThirdPartyAPIs\VtPassApis;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class CableTvController extends Controller
 {
-    public function providers(VtPassApis $vtPass): JsonResponse
+    public function providers(SageCloudServices $sageCloud): JsonResponse
     {
-        $response = $vtPass->fetchTvProviders();
+        $response = $sageCloud->fetchCableTvProviders();
 
-        if (empty($response) || !isset($response['content']) || (isset($response['response_description']) && $response['response_description'] != "000")) {
-            return ApiResponse::failed("An error occurred, please try again");
+        if (! $response['success']) {
+            return ApiResponse::failed("An error occurred with fetching provider");
         }
 
-        \Log::info("CableTV providers", $response['content']);
-
-        return ApiResponse::success("Provider packages retrieved successfully", $response['content']);
+        return ApiResponse::success("Cable-Tv providers retrieved successfully", $response['billers']);
     }
 
-    public function fetchPackages($type, VtPassApis $vtPass): JsonResponse
+    public function fetchPackages($type, SageCloudServices $sageCloud): JsonResponse
     {
-        $response = $vtPass->fetchTvBillersForProvider($type);
+        $response = $sageCloud->fetchCableTvBillersForProvider($type);
 
-        if (empty($response) || !isset($response['content']) || (isset($response['response_description']) && $response['response_description'] != "000")) {
-            return ApiResponse::failed('An error occurred with fetching provider packages');
+        if (! $response['success']) {
+            return ApiResponse::failed("An error occurred with fetching provider packages");
         }
 
-        return ApiResponse::success($type.' packages retrieved successfully', $response['content']['varations']);
+        return ApiResponse::success($type.' packages retrieved successfully', $response['plans']);
     }
 
-    public function validateSmartCard(Request $request, VtPassApis $vtPass): JsonResponse
+    public function validateSmartCard(Request $request, SageCloudServices $sageCloud): JsonResponse
     {
-        $request->validate([
-            'billers_code' => 'required|string',
-            'service_id' => 'required|string',
+        $validated = $request->validate([
+            'smartCardNo' => 'required|string',
+            'biller_id' => 'required|string',
         ]);
 
-//        $data = [
-//            'billersCode' => $request->billers_code,
-//            'serviceID' => $request->service_id
-//        ];
+        $response = $sageCloud->validateSmartcard($validated);
 
-//        $response = $vtPass->validateSmartCard($data);
-
-        $response = [
-            "code" => "000",
-            "content" => [
-                "Customer_Name" => "Mr  DsTEST",
-                "Status" => "Open",
-                "DUE_DATE" => "2019-07-23T00:00:00",
-                "Customer_Number" => 48209000,
-                "Customer_Type" => "DSTV",
-                "Current_Bouquet" => "DStv Premium-Asia N17630 + DStv French only N6050 + DStv Premium-French N20780",
-                "Current_Bouquet_Code" => "dstv10, dstv5, dstv9",
-                "Renewal_Amount" => 2500
-            ]
-        ];
-
-
-        if (empty($response) || !isset($response['content']) || (isset($response['code']) && $response['code'] != "000")) {
-            \Log::info("whats wrong", $response);
-            return ApiResponse::failed('An error occurred with fetching validating cable details');
+        if (! $response['success']) {
+            return ApiResponse::failed($response['message'] ?? 'Could not validate smart card details');
         }
 
-        return ApiResponse::success("SmartCard details validated successfully", $response['content']);
+        return ApiResponse::success("SmartCard details validated successfully", $response['customer']);
     }
 
-    public function purchase(Request $request, VtPassApis $vtPass)
+    public function purchase(Request $request, SageCloudServices $sageCloud)
     {
-        $request->validate([
-            'service_id' => 'required',
-            'billers_code' => 'required',
-            'variation_code' => 'required',
-            'amount' => 'required',
-        ]);
-
-        $requestId = now()->format('YmdHi') . \Str::random(10);
         $user = $request->user();
+
+        $data = $request->validate([
+            'smartCardNo' => 'required',
+            'code' => 'required',
+            'type' => 'required',
+            'amount' => 'required|decimal:0,2',
+        ]);
 
         $wallet = $user->wallet;
 
@@ -95,75 +72,37 @@ class CableTvController extends Controller
             return ApiResponse::failed("You don't have sufficient balance to continue");
         }
 
-        $data = [
-            'request_id' => $requestId,
-            'serviceID' => $request->service_id,
-            'billersCode' => $request->billers_code,
-            'amount' => $request->amount,
-            'phone' => $user->phone ?? '09061626364',
-            'subscription_type' => 'change'
+        $payload = [
+            'reference' => GeneralHelper::generateReference(ServiceType::CABLE_TV->value),
+            'smartCardNo' => $request->smartCardNo,
+            'code' => $request->code,
+            'type' => $request->type,
         ];
 
-//        $response = $vtPass->purchaseCableTv($data);
-        $response = [
-            "code" => "000",
-            "content" => [
-                "transactions" => [
-                    "status" => "initiated",
-                    "channel" => "api",
-                    "transactionId" => "1563857332996",
-                    "method" => "api",
-                    "platform" => "api",
-                    "is_api" => 1,
-                    "discount" => null,
-                    "customer_id" => 100649,
-                    "email" => "sandbox@vtpass.com",
-                    "phone" => "07061933309",
-                    "type" => "TV Subscription",
-                    "convinience_fee" => "0.00",
-                    "commission" => 0.75,
-                    "amount" => $request->amount,
-                    "total_amount" => 49.25,
-                    "quantity" => 1,
-                    "unit_price" => "50",
-                    "updated_at" => "2019-07-23 05:48:52",
-                    "created_at" => "2019-07-23 05:48:52",
-                    "id" => 7349787
-                ]
-            ],
-            "response_description" => "TRANSACTION SUCCESSFUL",
-            "requestId" => "SAND000001112A9320223291",
-            "amount" => "50.00",
-            "transaction_date" => [
-                "date" => "2019-07-23 05:48:52.000000",
-                "timezone_type" => 3,
-                "timezone" => "Africa/Lagos"
-            ],
-            "purchased_code" => ""
-        ];
+        $response = $sageCloud->purchaseCableTv($payload);
 
-        if (empty($response) || !isset($response['content']) || (isset($response['code']) && $response['code'] != "000")) {
-            \Log::info("whats wrong - purchase", $response);
-            return ApiResponse::failed('An error occurred with fetching validating cable details');
+        $amount = $request->amount;
+
+        if ($response['status'] != 'failed') {
+
+            $user->walletTransactions()->create([
+                'wallet_id' => $wallet->id,
+                'reference' => $response['requestId'],
+                'amount' => $amount,
+                'prev_balance' => $wallet->balance,
+                'new_balance' => $wallet->balance - $amount,
+                'service_type' => ServiceType::CABLE_TV->value,
+                'transaction_type' => TransactionTypeEnum::debit->name,
+                'status' => TransactionStatusEnum::SUCCESSFUL->name,
+                'narration' => 'You purchased TV subscription from ' . $request->service_id . ' for ₦' . $amount,
+            ]);
+
+            $wallet->balance -= $amount;
+            $wallet->save();
+
+            return ApiResponse::success("Cable TV purchase request submitted.");
         }
 
-        $amount = $response['content']['transactions']['amount'];
-
-        $user->walletTransactions()->create([
-            'wallet_id' => $wallet->id,
-            'reference' => $response['requestId'],
-            'amount' => $amount,
-            'prev_balance' => $wallet->balance,
-            'new_balance' => $wallet->balance - $amount,
-            'service_type' => ServiceType::CABLE_TV->value,
-            'transaction_type' => TransactionTypeEnum::debit->name,
-            'status' => TransactionStatusEnum::SUCCESSFUL->name,
-            'narration' => 'You purchased TV subscription from ' . $request->service_id .' for ₦'.$amount,
-        ]);
-
-        $wallet->balance -= $amount;
-        $wallet->save();
-
-        return ApiResponse::success("TV subscription purchased successfully");
+        return ApiResponse::failed("Your CableTV purchase request failed.");
     }
 }

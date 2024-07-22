@@ -13,5 +13,6 @@ enum ServiceType: string
             case BETTING = 'betting';
             case SME_DATA = 'sme-data';
             case JAMB = 'jamb';
+            case COMMISSION = 'commission';
 
 }
