@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\NokInformationController;
 use App\Http\Controllers\Services\AirtimeController;
+use App\Http\Controllers\Services\BettingController;
 use App\Http\Controllers\Services\CableTvController;
 use App\Http\Controllers\Services\DataController;
 use App\Http\Controllers\Services\ElectricityController;
@@ -68,6 +69,12 @@ Route::prefix('v1')->group(function () {
             Route::get('{type}/provider', [CableTvController::class, 'fetchPackages']);
             Route::post('validate', [CableTvController::class, 'validateSmartCard']);
             Route::post('purchase', [CableTvController::class, 'purchase']);
+        });
+
+        Route::prefix('betting')->group(function () {
+            Route::get('fetch-billers', [BettingController::class, 'providers']);
+            Route::post('validate', [BettingController::class, 'validateBetting']);
+            Route::post('purchase', [BettingController::class, 'purchase']);
         });
 
         Route::prefix('electricity')->group(function () {
