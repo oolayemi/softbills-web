@@ -140,7 +140,7 @@ class UserController extends Controller
 //            'narration' => 'BVN verification payment',
 //        ]);
 //
-//        if ($response['status'] != 'failed') {
+//        if (isset($response['status']) && $response['status'] != 'failed') {
 //            if ($response['data']['verification_status'] == 'VERIFIED') {
 //                $user->update(['tier' => 2]);
 //            }

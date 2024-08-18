@@ -56,10 +56,12 @@ class DataController extends Controller
             'code' => $request->bundle,
         ];
 
-        $response = $sageCloud->purchaseData($payload);
-        $amount = $response['amount'];
+        $data = $request->all();
 
-        if ($response['status'] != 'failed') {
+        $response = $sageCloud->purchaseData($payload);
+        $amount = $data['amount'];
+
+        if (isset($response['status']) && $response['status'] != 'failed') {
 
             $user->walletTransactions()->create([
                 'wallet_id' => $wallet->id,

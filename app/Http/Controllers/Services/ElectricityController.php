@@ -23,7 +23,7 @@ class ElectricityController extends Controller
     {
         $response = $sageCloud->fetchElectricityBillers();
 
-        if (! $response['success']) {
+        if (!$response['success']) {
             return ApiResponse::failed("An error occurred while fetching electricity billers");
         }
 
@@ -41,7 +41,7 @@ class ElectricityController extends Controller
 
         $response = $sageCloud->validateMeter($validated);
 
-        if (! $response['success']) {
+        if (!$response['success']) {
             return ApiResponse::failed("An error occurred while validating meter number");
         }
 
@@ -50,8 +50,6 @@ class ElectricityController extends Controller
 
     public function purchase(Request $request, SageCloudServices $sageCloud): JsonResponse
     {
-        $user = $request->user();
-
         $data = $request->validate([
             'type' => 'required',
             'account_number' => 'required|string',
@@ -60,8 +58,15 @@ class ElectricityController extends Controller
 
         $validatedMeter = $sageCloud->validateMeter($data);
 
-        if (! $validatedMeter['success']) {
+        if (!$validatedMeter['success']) {
             return ApiResponse::failed("An error occurred while validating meter");
+        }
+
+        $user = $request->user();
+        $wallet = $user->wallet;
+
+        if (!GeneralHelper::hasEnoughBalance($wallet, $request->amount)) {
+            return ApiResponse::failed("You don't have sufficient balance to continue");
         }
 
         $payload = [
@@ -73,34 +78,29 @@ class ElectricityController extends Controller
             'amount' => $data['amount'],
         ];
 
-        $wallet = $user->wallet;
-
-        if (!GeneralHelper::hasEnoughBalance($wallet, $request->amount)){
-            return ApiResponse::failed("You don't have sufficient balance to continue");
-        }
-
         $response = $sageCloud->purchasePower($payload);
-        if (! $response['success'] || ! isset($response['status']) || $response['status'] == 'failed') {
-            return ApiResponse::failed("Your electricity purchase request failed");
+        Log::info("response from purchase power", $response);
+        $amount = $data['amount'];
+
+        if (isset($response['status']) && $response['status'] != 'failed') {
+
+            $user->walletTransactions()->create([
+                'wallet_id' => $wallet->id,
+                'reference' => $payload['reference'],
+                'amount' => $amount,
+                'prev_balance' => $wallet->balance,
+                'new_balance' => $wallet->balance - $amount,
+                'service_type' => ServiceType::ELECTRICITY->value,
+                'transaction_type' => TransactionTypeEnum::debit->name,
+                'status' => $response['status'] == 'pending' ? TransactionStatusEnum::PENDING->name : TransactionStatusEnum::SUCCESSFUL->name,
+                'narration' => 'You purchased electricity from ' . $payload['disco'] . ' for ₦' . $payload['amount'],
+            ]);
+
+            $wallet->balance -= $amount;
+            $wallet->save();
+
+            return ApiResponse::success("Electricity purchase request submitted");
         }
-
-        $amount = $request->amount;
-
-        $user->walletTransactions()->create([
-            'wallet_id' => $wallet->id,
-            'reference' => $response['requestId'],
-            'amount' => $amount,
-            'prev_balance' => $wallet->balance,
-            'new_balance' => $wallet->balance - $amount,
-            'service_type' => ServiceType::ELECTRICITY->value,
-            'transaction_type' => TransactionTypeEnum::debit->name,
-            'status' => TransactionStatusEnum::SUCCESSFUL->name,
-            'narration' => 'You purchased electricity from '.$payload['disco'].' for ₦'.$payload['amount'],
-        ]);
-
-        $wallet->balance -= $amount;
-        $wallet->save();
-
-        return ApiResponse::success("Electricity purchase request submitted");
+        return ApiResponse::failed("Electricity purchase request failed");
     }
 }

@@ -73,7 +73,7 @@ class BettingController extends Controller
         $response = $sageCloud->fundBetting($payload);
         Log::info('funding betting response', [$response]);
 
-        if ($response['status'] != 'failed') {
+        if (isset($response['status']) && $response['status'] != 'failed') {
             $user->walletTransactions()->create([
                 'wallet_id' => $wallet->id,
                 'reference' => $response['requestId'],

@@ -83,7 +83,7 @@ class CableTvController extends Controller
 
         $amount = $request->amount;
 
-        if ($response['status'] != 'failed') {
+        if (isset($response['status']) && $response['status'] != 'failed') {
 
             $user->walletTransactions()->create([
                 'wallet_id' => $wallet->id,

@@ -71,7 +71,7 @@ class AirtimeController extends Controller
 
         $response = $sageCloud->purchaseAirtime($payload);
 
-        if ($response['status'] != 'failed') {
+        if (isset($response['status']) && $response['status'] != 'failed') {
 
             $user->walletTransactions()->create([
                 'wallet_id' => $wallet->id,

@@ -8,6 +8,7 @@ use App\Http\Controllers\Services\BettingController;
 use App\Http\Controllers\Services\CableTvController;
 use App\Http\Controllers\Services\DataController;
 use App\Http\Controllers\Services\ElectricityController;
+use App\Http\Controllers\Services\TransferController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WalletController;
 use Illuminate\Http\Request;
@@ -41,12 +42,6 @@ Route::prefix('v1')->group(function () {
     });
 
     Route::middleware(['auth:sanctum'])->group(function () {
-        Route::prefix('wallet')->group(function () {
-            Route::get('bank-list', [WalletController::class, 'getBanks']);
-            Route::post('name-enquiry', [WalletController::class, 'validateName']);
-
-        });
-
 
         Route::prefix('user')->group(function () {
             Route::get('profile', [UserController::class, 'userProfile']);
@@ -69,6 +64,12 @@ Route::prefix('v1')->group(function () {
             Route::get('{type}/provider', [CableTvController::class, 'fetchPackages']);
             Route::post('validate', [CableTvController::class, 'validateSmartCard']);
             Route::post('purchase', [CableTvController::class, 'purchase']);
+        });
+
+        Route::prefix('transfer')->group(function () {
+            Route::get('bank-list', [TransferController::class, 'getBanks']);
+            Route::post('name-enquiry', [TransferController::class, 'validateName']);
+            Route::post('make-transfer', [TransferController::class, 'makeTransfer']);
         });
 
         Route::prefix('betting')->group(function () {

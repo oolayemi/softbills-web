@@ -7,6 +7,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class SageCloudServices
 {
@@ -100,15 +101,13 @@ class SageCloudServices
     private $password;
 
     private $access_token;
+    private SageCloudV3 $sageCloud;
 
     public function __construct($isV3 = false)
     {
         if ($isV3) {
-            $email = config('sagecloud.email');
-            $password = config('sagecloud.password');
-            $secret_key = config('sagecloud.secret_key');
 
-//            $this->sageCloud = new SageCloud($email, $password, $secret_key);
+            $this->sageCloud = new SageCloudV3();
 
         } else {
             $credentials = [
@@ -140,7 +139,7 @@ class SageCloudServices
     }
 
     /**
-     * @param  array  $params array<string, string> ['reference' => <string>, 'network' => <string>, 'service' => <string>, 'phone' => <string>, 'amount' => <string>]
+     * @param array $params array<string, string> ['reference' => <string>, 'network' => <string>, 'service' => <string>, 'phone' => <string>, 'amount' => <string>]
      */
     public function purchaseAirtime(array $params): array
     {
@@ -271,7 +270,7 @@ class SageCloudServices
     public function transferFunds(array $params): array
     {
         $url = sprintf('%s%s', self::BASE_URL, self::TRANSFER_FUNDS);
-        $res = Http::withToken($this->access_token)->post($url, $params);
+        $res = Http::withToken($this->access_token)->acceptJson()->post($url, $params);
 
         return $this->response($res);
     }
@@ -391,27 +390,38 @@ class SageCloudServices
 
     protected function post(string $url, array $params): array
     {
-        $res = Http::withToken($this->access_token)->post($url, $params);
-
+        $res = Http::withToken($this->access_token)->acceptJson()->post($url, $params);
         return $this->response($res);
     }
 
     protected function get(string $url, $params = null): array
     {
         $url = $params ? $url . '?' . http_build_query($params) : $url;
-        $res = Http::withToken($this->access_token)->get($url);
+        $res = Http::withToken($this->access_token)
+            ->acceptJson()
+            ->get($url);
 
         return $this->response($res);
     }
 
-//    public function createVirtualAccount($payload): array
-//    {
-//        return $this->sageCloud->generateVirtualAccount($payload);
-//    }
+    /**
+     * @param array $payload array<string, string>['account_name' => <string>, 'email' => <string>]
+     * @return array
+     */
+    public function createVirtualAccount(array $payload): array
+    {
+        return $this->sageCloud->generateVirtualAccount($payload);
+    }
 
     private function response(Response $response): array
     {
-        return $response->ok() && $response->json() ? $response->json() : [];
+        if ($response->ok() && $response->json()) {
+            return $response->json();
+        } else {
+            Log::info('error from sagecloud action', $response->json() ?? [$response]);
+
+            return [];
+        }
     }
 
     private function getToken(): void
@@ -432,10 +442,7 @@ class SageCloudServices
                 ];
                 Cache::put('sage-cloud-key', $body, $expires_at);
                 $this->access_token = $body['access_token'];
-
-                return;
             }
-            //LogToSlack::dispatch('auth-error-from-sagecloud', $response);
         }
     }
 }

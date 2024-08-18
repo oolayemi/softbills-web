@@ -9,6 +9,7 @@ use App\Rules\Phone;
 use App\Services\Helpers\ApiResponse;
 use App\Services\ThirdPartyAPIs\CrystalPayApis;
 use App\Services\ThirdPartyAPIs\MonnifyApis;
+use App\Services\ThirdPartyAPIs\SageCloudServices;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -94,7 +95,8 @@ class RegisterController extends Controller
     {
         $wallet = $user->wallet()->create();
 //        self::createMonnifyVirtualAccount($user, $wallet);
-        self::createCrystalPayVirtualAccount($user, $wallet);
+//        self::createCrystalPayVirtualAccount($user, $wallet);
+        self::createSageCloudVirtualAccount($user, $wallet);
 
     }
 
@@ -135,7 +137,33 @@ class RegisterController extends Controller
             Log::info("failed response from create virtual account from monnify", $response);
         }
     }
+    protected static function createSageCloudVirtualAccount(User $user, Wallet $wallet)
+    {
+        $sageCloudVirtualAccount = new SageCloudServices(isV3: true);
 
+        $payload = [
+            "account_name" => sprintf('%s %s', $user->firstname, $user->lastname),
+            "email" => $user->email,
+        ];
+
+        $response = $sageCloudVirtualAccount->createVirtualAccount($payload);
+
+        Log::info("creating sagecloud virtual account", $response);
+
+        if (isset($response['status']) && $response['status'] == 'success') {
+            $account = $response['data']['account_details'];
+                $wallet->virtualAccount()->create([
+                    'user_id' => $user->id,
+                    'account_name' => $account['account_name'],
+                    'account_number' => $account['account_number'],
+                    'bank_name' => $account['bank_name'],
+                    'provider' => 'SAGECLOUD',
+                    'account_reference' => $account['account_reference'],
+                ]);
+        } else {
+            Log::info("failed response from create virtual account from sagecloud", $response);
+        }
+    }
     protected static function createCrystalPayVirtualAccount(User $user, Wallet $wallet)
     {
         $crystalPayApis = resolve(CrystalPayApis::class);
