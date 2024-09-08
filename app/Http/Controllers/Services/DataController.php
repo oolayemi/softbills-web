@@ -38,6 +38,7 @@ class DataController extends Controller
             'operator' => 'required',
             'amount' => 'required',
             'bundle' => ['required'],
+            'image_url' => ['nullable', 'string'],
         ]);
 
         $user = $request->user();
@@ -73,6 +74,7 @@ class DataController extends Controller
                 'transaction_type' => TransactionTypeEnum::debit->name,
                 'status' => TransactionStatusEnum::SUCCESSFUL->name,
                 'narration' => $payload['network'] . ' data purchased of ₦' . $request->amount . ' to ' . $payload['phone'],
+                'image_url' => $request->image_url
             ]);
 
             $wallet->balance -= $amount;

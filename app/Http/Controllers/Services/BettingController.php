@@ -52,6 +52,7 @@ class BettingController extends Controller
             'customerId' => ['required'],
             'type' => ['required', 'string'],
             'amount' => ['required', 'numeric'],
+            'image_url' => ['nullable', 'string'],
         ]);
 
         $data = $request->all();
@@ -84,6 +85,7 @@ class BettingController extends Controller
                 'transaction_type' => TransactionTypeEnum::debit->name,
                 'status' => TransactionStatusEnum::SUCCESSFUL->name,
                 'narration' => $payload['type'].' betting funding of ₦'.$payload['amount'],
+                'image_url' => $request->image_url
             ]);
 
             $wallet->balance -= $data['amount'];

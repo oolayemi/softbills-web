@@ -50,6 +50,7 @@ class AirtimeController extends Controller
             'mobile' => ['required', new Phone],
             'amount' => ['required', 'numeric', 'decimal:0,2'],
             'operator' => ['required'],
+            'image_url' => ['nullable', 'string'],
         ]);
 
         $data = $request->all();
@@ -82,7 +83,8 @@ class AirtimeController extends Controller
                 'service_type' => ServiceType::AIRTIME->value,
                 'transaction_type' => TransactionTypeEnum::debit->name,
                 'status' => TransactionStatusEnum::SUCCESSFUL->name,
-                'narration' => $payload['network'] . ' airtime purchased of ₦' . $payload['amount'] . ' to ' . $payload['phone']
+                'narration' => $payload['network'] . ' airtime purchased of ₦' . $payload['amount'] . ' to ' . $payload['phone'],
+                'image_url' => $request->image_url
             ]);
 
             $wallet->balance -= $amount;

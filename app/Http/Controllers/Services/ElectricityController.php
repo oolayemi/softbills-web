@@ -54,6 +54,7 @@ class ElectricityController extends Controller
             'type' => 'required',
             'account_number' => 'required|string',
             'amount' => 'required|decimal:0,2',
+            'image_url' => ['nullable', 'string'],
         ]);
 
         $validatedMeter = $sageCloud->validateMeter($data);
@@ -94,6 +95,7 @@ class ElectricityController extends Controller
                 'transaction_type' => TransactionTypeEnum::debit->name,
                 'status' => $response['status'] == 'pending' ? TransactionStatusEnum::PENDING->name : TransactionStatusEnum::SUCCESSFUL->name,
                 'narration' => 'You purchased electricity from ' . $payload['disco'] . ' for ₦' . $payload['amount'],
+                'image_url' => $request->image_url
             ]);
 
             $wallet->balance -= $amount;

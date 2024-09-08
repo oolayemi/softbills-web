@@ -5,7 +5,12 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\Wallet;
 use App\Rules\Phone;
+use App\Services\Enums\ServiceType;
+use App\Services\Enums\TransactionStatusEnum;
+use App\Services\Enums\TransactionTypeEnum;
 use App\Services\Helpers\ApiResponse;
+use App\Services\Helpers\GeneralHelper;
+use App\Services\ThirdPartyAPIs\SageCloudServices;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -59,7 +64,7 @@ class UserController extends Controller
     {
         $user = \request()->user();
         $walletTransactions = $user->walletTransactions()
-            ->orderByDesc('id')
+            ->orderByDesc('created_at')
             ->paginate(50)
             ->toArray();
 
@@ -105,50 +110,50 @@ class UserController extends Controller
         return ApiResponse::success( "Transaction PIN updated successfully");
     }
 
-//    public function tier2Upgrade(Request $request, SageCloudServices $sageCloud): JsonResponse
-//    {
-//        $user = $request->user();
+    public function tier2Upgrade(Request $request, SageCloudServices $sageCloud): JsonResponse
+    {
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'bvn' => ['required', 'digits:11', 'numeric'],
+            'phone' => ['required', new Phone],
+        ]);
+
+//        $wallet = $user->wallet;
+//        $amount = 25;
 //
-//        $validated = $request->validate([
-//            'bvn' => ['required', 'digits:11', 'numeric'],
-//            'phone' => ['required', new Phone],
-//        ]);
-//
-//        $wallet = $user->nairaWallet;
-//
-//        if (! checkWalletBalance($wallet, 25)) {
-//            return response()->json([
-//                'status' => ApiResponseEnum::failed(),
-//                'message' => 'You don\'t have sufficient balance to continue.',
-//            ]);
+//        if (!GeneralHelper::hasEnoughBalance($wallet, $amount)) {
+//            return ApiResponse::failed("You don't have sufficient balance to continue");
 //        }
 //
 //        $response = $sageCloud->verifyBvn($validated);
-//        Log::info('response from verify bvn', [$response]);
+//        \Log::info('response from verify bvn', [$response]);
 //
 //        $user->walletTransactions()->create([
-//            'naira_wallet_id' => $wallet->id,
-//            'reference' => tx_ref(),
-//            'amount' => 25,
-//            'charges' => 0,
-//            'wallet_source' => WalletSourceEnum::naira(),
+//            'wallet_id' => $wallet->id,
+//            'reference' => GeneralHelper::generateReference(),
+//            'amount' => $amount,
 //            'prev_balance' => $wallet->balance,
-//            'new_balance' => $wallet->balance - 25,
-//            'type' => 'BVN Verification',
-//            'transaction_type' => TransactionTypeEnum::debit(),
-//            'status' => 'success',
+//            'new_balance' => $wallet->balance - $amount,
+//            'service_type' => ServiceType::BVN_VERIFICATION->value,
+//            'transaction_type' => TransactionTypeEnum::debit->name,
+//            'status' => TransactionStatusEnum::SUCCESSFUL->name,
 //            'narration' => 'BVN verification payment',
 //        ]);
+//
+//        $wallet->balance -= $amount;
+//        $wallet->save();
 //
 //        if (isset($response['status']) && $response['status'] != 'failed') {
 //            if ($response['data']['verification_status'] == 'VERIFIED') {
 //                $user->update(['tier' => 2]);
 //            }
+//
+//            return ApiResponse::success("Account upgraded successfully");
 //        }
 //
-//        return response()->json([
-//            'status' => ApiResponseEnum::success(),
-//            'message' => 'Account upgraded successfully',
-//        ]);
-//    }
+//        return ApiResponse::failed("Account upgrade was not successful");
+        $user->update(['tier' => 2, 'bvn' => $request->bvn]);
+        return ApiResponse::success("Your BVN has been submitted successfully");
+    }
 }

@@ -8,4 +8,6 @@ return [
 
     'secret_key' => env('SAGE_CLOUD_SECRET_KEY'),
 
+    'public_key' => env('SAGE_CLOUD_PUBLIC_KEY'),
+
 ];

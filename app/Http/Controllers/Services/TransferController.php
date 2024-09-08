@@ -47,6 +47,7 @@ class TransferController extends Controller
             'account_name' => 'required',
             'amount' => 'required|decimal:0,2',
             'narration' => 'nullable',
+            'image_url' => ['nullable', 'string'],
         ]);
 
         $user = $request->user();
@@ -81,6 +82,7 @@ class TransferController extends Controller
                 'transaction_type' => TransactionTypeEnum::debit->name,
                 'status' =>$response['status'] == 'pending' ? TransactionStatusEnum::PENDING->name : TransactionStatusEnum::SUCCESSFUL->name,
                 'narration' => 'Transfer of ₦'.  $amount . ' to ' . $request->account_name,
+                'image_url' => $request->image_url
             ]);
 
             $wallet->balance -= $amount;

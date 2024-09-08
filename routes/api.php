@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\NokInformationController;
@@ -39,6 +40,12 @@ Route::prefix('v1')->group(function () {
             Route::post('', RegisterController::class);
         });
         Route::post('login', LoginController::class);
+    });
+
+    Route::prefix('forgot-password')->group(function () {
+        Route::post('reset', [ForgotPasswordController::class, 'resetPassword']);
+        Route::post('request', [ForgotPasswordController::class, 'requestReset']);
+        Route::post( 'verify-otp', [ForgotPasswordController::class, 'verifyOtp']);
     });
 
     Route::middleware(['auth:sanctum'])->group(function () {

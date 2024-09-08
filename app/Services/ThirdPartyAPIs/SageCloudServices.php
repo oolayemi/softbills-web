@@ -96,34 +96,20 @@ class SageCloudServices
         '9mobile' => '9MOBILEVTU',
     ];
 
-    private $email;
-
-    private $password;
-
     private $access_token;
     private SageCloudV3 $sageCloud;
 
     public function __construct($isV3 = false)
     {
         if ($isV3) {
-
             $this->sageCloud = new SageCloudV3();
-
         } else {
-            $credentials = [
-                'email' => config('sagecloud.email'),
-                'password' => config('sagecloud.password'),
-            ];
-
-            $this->email = $credentials['email'];
-            $this->password = $credentials['password'];
 
             //check for existing token in cache
             $sageCloudKey = Cache::get('sage-cloud-key');
 
             if (empty($sageCloudKey)) {
                 $this->getToken();
-
                 return;
             }
 
@@ -426,11 +412,18 @@ class SageCloudServices
 
     private function getToken(): void
     {
+        $secretKey = config('sagecloud.secret_key');
+        $publicKey = config('sagecloud.public_key');
+
+        $token = base64_encode(sprintf('%s:%s', $publicKey, $secretKey));
+
         $url = static::BASE_URL . '/v2/merchant/authorization';
-        $res = Http::post($url, [
-            'email' => $this->email,
-            'password' => $this->password,
-        ]);
+        $res = Http::acceptJson()
+            ->contentType('application/json')
+            ->withHeaders(['Authorization' => 'Basic ' . $token])
+            ->post($url);
+
+        Log::info("resoinse ", $res->json() ?? [$res]);
 
         if (($response = $res->json()) && $res->ok()) {
             if ($response['success']) {

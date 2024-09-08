@@ -64,6 +64,7 @@ class CableTvController extends Controller
             'code' => 'required',
             'type' => 'required',
             'amount' => 'required|decimal:0,2',
+            'image_url' => ['nullable', 'string'],
         ]);
 
         $wallet = $user->wallet;
@@ -95,6 +96,7 @@ class CableTvController extends Controller
                 'transaction_type' => TransactionTypeEnum::debit->name,
                 'status' => TransactionStatusEnum::SUCCESSFUL->name,
                 'narration' => 'You purchased TV subscription from ' . $request->service_id . ' for ₦' . $amount,
+                'image_url' => $request->image_url
             ]);
 
             $wallet->balance -= $amount;

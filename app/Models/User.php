@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -31,6 +32,7 @@ class User extends Authenticatable
         'password',
         'image_url',
         'tier',
+        'bvn',
         'device_id',
         'email_verified_at',
         'phone_verified_at',
@@ -46,6 +48,7 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'bvn'
     ];
 
     /**
@@ -61,6 +64,10 @@ class User extends Authenticatable
         'tier' => 'integer',
     ];
 
+    public function otp(): HasOne
+    {
+        return $this->hasOne(Otp::class, 'user_id');
+    }
 
     public function wallet(): HasOne
     {
@@ -75,5 +82,22 @@ class User extends Authenticatable
     public function walletTransactions(): HasMany
     {
         return $this->hasMany(WalletTransaction::class);
+    }
+
+    protected function getImageUrl($imageUrl): ?string
+    {
+        return $imageUrl != null ? $this->checkImageUrl($imageUrl) : null;
+    }
+
+    protected function checkImageUrl($imageUrl): string
+    {
+        return str_starts_with($imageUrl, 'http') ? $imageUrl : asset('/storage/' . $imageUrl);
+    }
+
+    protected function imageUrl(): Attribute
+    {
+        return Attribute::get(
+            fn($value) => self::getImageUrl($value)
+        );
     }
 }

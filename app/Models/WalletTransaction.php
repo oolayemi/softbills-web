@@ -25,6 +25,7 @@ class WalletTransaction extends Model
         'channel',
         'is_commission',
         'narration',
+        'image_url'
     ];
 
     protected $casts = [
